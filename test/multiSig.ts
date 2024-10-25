@@ -20,11 +20,9 @@ describe("MultiSig Test", function () {
         it("Should deploy with correct initiate transaction", async function () {
             const { multiSig, owner, signerKey1, signerKey2 } = await loadFixture(deployMultiSigFixture);
             
-            // Verify contract balance
             const balance = await ethers.provider.getBalance(multiSig.target);
             expect(balance).to.equal(ethers.parseEther("10"));
 
-            // Verify signers
             expect(await multiSig.signers(0)).to.equal(owner.address);
             expect(await multiSig.signers(1)).to.equal(signerKey1.address);
             expect(await multiSig.signers(2)).to.equal(signerKey2.address);
@@ -60,10 +58,8 @@ describe("MultiSig Test", function () {
             const amount = ethers.parseEther("1");
             const initialBalance = await ethers.provider.getBalance(signerKey2.address);
             
-            // First signer initiates
             await multiSig.connect(owner).initiateTransaction(amount, signerKey2.address);
             
-            // Second signer approves
             await multiSig.connect(signerKey1).approveTransaction(1);
             
             const finalBalance = await ethers.provider.getBalance(signerKey2.address);
@@ -85,17 +81,13 @@ describe("MultiSig Test", function () {
         it("Should transfer ownership correctly", async function () {
             const { multiSig, owner, signerKey1 } = await loadFixture(deployMultiSigFixture);
             
-            // Transfer ownership
             await multiSig.connect(owner).transferOwnership(signerKey1.address);
             
-            // Claim ownership
             await multiSig.connect(signerKey1).claimOwnership();
             
-            // Test adding new signer with new owner
             const newSignerAddress = "0x6Db691950c09b2025855B3166D14EbAF1F6E8ba9";
             await multiSig.connect(signerKey1).addValidSigner(newSignerAddress);
             
-            // Verify old owner can't add signers
             await expect(
                 multiSig.connect(owner).addValidSigner(newSignerAddress)
             ).to.be.revertedWith("not owner");
@@ -114,16 +106,12 @@ describe("MultiSig Test", function () {
         it("Should allow owner to add and remove signers", async function () {
             const { multiSig, owner, nonSigner } = await loadFixture(deployMultiSigFixture);
             
-            // Add new signer
             await multiSig.connect(owner).addValidSigner(nonSigner.address);
             
-            // Verify new signer can initiate transaction
             await multiSig.connect(nonSigner).initiateTransaction(ethers.parseEther("1"), owner.address);
             
-            // Remove signer
-            await multiSig.connect(owner).removeSigner(3); // Remove the last added signer
+            await multiSig.connect(owner).removeSigner(3); 
             
-            // Verify removed signer can't initiate transaction
             await expect(
                 multiSig.connect(nonSigner).initiateTransaction(ethers.parseEther("1"), owner.address)
             ).to.be.revertedWith("not valid signer");
